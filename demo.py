@@ -15,7 +15,7 @@ def main():
 
     torch.backends.cudnn.deterministic = True
     checkpoint_path = utils.find_checkpoint(cfg.INTERACTIVE_MODELS_PATH, args.checkpoint)
-    model = utils.load_is_model(checkpoint_path, args.device, args.eval_ritm, cpu_dist_maps=True)
+    model = utils.load_is_model(checkpoint_path, args.device, False, cpu_dist_maps=True)
 
     root = tk.Tk()
     root.minsize(960, 480)
