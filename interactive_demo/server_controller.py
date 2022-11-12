@@ -1,6 +1,6 @@
 import torch
-import logging
 import numpy as np
+import logging
 from tkinter import messagebox
 
 from isegm.inference import clicker
@@ -8,7 +8,7 @@ from isegm.inference.predictors import get_predictor
 from isegm.utils.vis import draw_with_blend_and_clicks
 
 
-class InteractiveController:
+class ServerController:
     def __init__(self, net, device, predictor_params, update_image_callback, prob_thresh=0.5):
         self.net = net
         self.prob_thresh = prob_thresh
@@ -32,10 +32,10 @@ class InteractiveController:
         self._result_mask = np.zeros(image.shape[:2], dtype=np.uint16)
         self.object_count = 0
         self.reset_last_object(update_image=False)
-        self.update_image_callback(reset_canvas=True)
+        self.update_image_callback()
 
     def set_mask(self, mask):
-        logging.debug('Set Mask')
+        logging.debug('I am setting a mask now!')
         if self.image.shape[:2] != mask.shape[:2]:
             messagebox.showwarning("Warning", "A segmentation mask must have the same sizes as the current image!")
             return
@@ -153,7 +153,7 @@ class InteractiveController:
         return result_mask
 
     def get_visualization(self, alpha_blend, click_radius):
-        logging.debug('get_viz')
+        print('get_visualization')
         if self.image is None:
             return None
 

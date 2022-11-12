@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms
 from isegm.inference.transforms import AddHorizontalFlip, SigmoidForPred, LimitLongestSide
+import logging
 
 
 class BasePredictor(object):
@@ -76,6 +77,7 @@ class BasePredictor(object):
         return prediction.cpu().numpy()[0, 0]
 
     def _get_prediction(self, image_nd, clicks_lists, is_image_changed):
+        logging.debug(f"get_prediction: {image_nd.shape} {clicks_lists} {is_image_changed}")
         points_nd = self.get_points_nd(clicks_lists)
         return self.net(image_nd, points_nd)['instances']
 

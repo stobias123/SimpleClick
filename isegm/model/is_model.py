@@ -31,6 +31,7 @@ class ISModel(nn.Module):
             ]
             self.maps_transform = nn.Sequential(*mt_layers)
         else:
+            ## this is what we use in demo
             self.maps_transform=nn.Identity()
 
         self.dist_maps = DistMaps(norm_radius=norm_radius, spatial_scale=1.0,
@@ -42,6 +43,9 @@ class ISModel(nn.Module):
         coord_features = self.maps_transform(coord_features)
         outputs = self.backbone_forward(image, coord_features)
 
+        ## If i get here, I'm winning
+        ## In the demo mode, this forward pass has downsized the image.
+        ## prev mask should be 488 488
         outputs['instances'] = nn.functional.interpolate(outputs['instances'], size=image.size()[2:],
                                                          mode='bilinear', align_corners=True)
         if self.with_aux_output:
