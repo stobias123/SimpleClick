@@ -4,6 +4,7 @@ from isegm.utils.serialization import serialize
 from .is_model import ISModel
 from .modeling.models_vit import VisionTransformer, PatchEmbed
 from .modeling.swin_transformer import SwinTransfomerSegHead
+import logging
 
 
 class SimpleFPN(nn.Module):
@@ -77,12 +78,15 @@ class PlainVitModel(ISModel):
             embed_dim=backbone_params['embed_dim'],
         )
 
+        logging.debug(f"Using backbone: {backbone_params}")
         self.backbone = VisionTransformer(**backbone_params)
         self.neck = SimpleFPN(**neck_params)
         self.head = SwinTransfomerSegHead(**head_params)
 
     def backbone_forward(self, image, coord_features=None):
+        ## our coord features have somehow got expanded to 7000x1280
         coord_features = self.patch_embed_coords(coord_features)
+        # image should be downscaled at this point.
         backbone_features = self.backbone.forward_backbone(image, coord_features, self.random_split)
 
         # Extract 4 stage backbone feature map: 1/4, 1/8, 1/16, 1/32
