@@ -183,8 +183,11 @@ class ServerController:
         write_simple_mask returns the a binary ish mask, that could be useful for downstream operations.
         It will optionally upload it to s3 if an s3_client is provided
         """
-        img = self.result_mask
         logging.info(f"Writing image to {mask_path}/{key}")
+        img = self.result_mask
+        if img.max() < 256:
+            mask = img.astype(np.uint8)
+            mask *= 255 // mask.max()
         cv2.imwrite(f"{mask_path}/{key}", img)
         if s3_client is not None:
             logging.info(f"Uploading image to {bucket_name}/{mask_path}/{key}")
