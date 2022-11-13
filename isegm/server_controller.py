@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import logging
 from tkinter import messagebox
+import cv2
 
 from isegm.inference import clicker
 from isegm.inference.predictors import get_predictor
@@ -133,6 +134,62 @@ class ServerController:
         self._init_mask = None
         self.clicker.click_indx_offset = 0
 
+    def get_points(self,points_array):
+        return_arr = []
+        i = 0
+        while i < len(points_array):
+            x = points_array[i+0]
+            y = points_array[i+1]
+            i+=2
+            return_arr.append((x,y))
+        return return_arr
+
+    def parse_image(self, client, bucket, image_s3_url, shapes_for_frame, predictor_params, state):
+        """
+        parse_image will do the following.
+            1. Download the image from image_s3_url
+            2. Get all the points from the cvat shape,
+            3. "Finish object" - Pass it through the net and set final mask.
+            4. Return the mask
+        :return: np.array(uint.8)
+        """
+        bucket, key = image_s3_url.replace("s3://", "").split("/", 1)
+        logging.info(f"Downloading image from {image_s3_url}")
+        client.download_file(bucket, key, key)
+        image = cv2.cvtColor(cv2.imread(key), cv2.COLOR_BGR2RGB)
+        self.reset_predictor(predictor_params)
+        self.set_image(image)
+        img = self.get_visualization(state.alpha_blend,state.click_radius)
+        for instance in shapes_for_frame:
+            for point in self.get_points(instance['points']):
+                self.add_click(point[0],point[1], True)
+            self.finish_object()
+        return self.result_mask
+
+    def write_pretty_mask(self, key, alpha_blend, click_radius, s3_client = None, mask_path: str = 'pretty_mask', bucket_name: str = 'bird-mlflow-bucket'):
+        """
+        write_pretty_mask returns the nice mask like you'd want to see in a GUI.
+        It will optionally upload it to s3 if an s3_client is provided
+        """
+        img = self.get_visualization(alpha_blend, click_radius)
+        logging.info(f"Writing pretty to {mask_path}/{key}")
+        cv2.imwrite(f"{mask_path}/{key}", img)
+        if s3_client is not None:
+            logging.info(f"Uploading image to {bucket_name}/{mask_path}/{key}")
+            s3_client.upload_file(f"{mask_path}/{key}",bucket_name, f"{mask_path}/{key}")
+
+    def write_simple_mask(self, key, s3_client = None, mask_path: str = 'binary_mask', bucket_name: str = 'bird-mlflow-bucket'):
+        """
+        write_simple_mask returns the a binary ish mask, that could be useful for downstream operations.
+        It will optionally upload it to s3 if an s3_client is provided
+        """
+        img = self.result_mask
+        logging.info(f"Writing image to {mask_path}/{key}")
+        cv2.imwrite(f"{mask_path}/{key}", img)
+        if s3_client is not None:
+            logging.info(f"Uploading image to {bucket_name}/{mask_path}/{key}")
+            s3_client.upload_file(f"{mask_path}/{key}",bucket_name, f"{mask_path}/{key}")
+
     @property
     def current_object_prob(self):
         if self.probs_history:
@@ -153,7 +210,7 @@ class ServerController:
         return result_mask
 
     def get_visualization(self, alpha_blend, click_radius):
-        print('get_visualization')
+        logging.info('get_visualization')
         if self.image is None:
             return None
 
