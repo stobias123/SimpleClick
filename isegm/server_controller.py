@@ -144,7 +144,7 @@ class ServerController:
             return_arr.append((x,y))
         return return_arr
 
-    def parse_image(self, client, bucket, image_s3_url, shapes_for_frame, predictor_params, state):
+    def parse_image(self, file_path, shapes_for_frame, predictor_params, state):
         """
         parse_image will do the following.
             1. Download the image from image_s3_url
@@ -153,10 +153,8 @@ class ServerController:
             4. Return the mask
         :return: np.array(uint.8)
         """
-        bucket, key = image_s3_url.replace("s3://", "").split("/", 1)
-        logging.info(f"Downloading image from {image_s3_url}")
-        client.download_file(bucket, key, key)
-        image = cv2.cvtColor(cv2.imread(key), cv2.COLOR_BGR2RGB)
+        logging.info(f"Getting image from {file_path}")
+        image = cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB)
         self.reset_predictor(predictor_params)
         self.set_image(image)
         img = self.get_visualization(state.alpha_blend,state.click_radius)
