@@ -164,32 +164,32 @@ class ServerController:
             self.finish_object()
         return self.result_mask
 
-    def write_pretty_mask(self, key, alpha_blend, click_radius, s3_client = None, mask_path: str = 'pretty_mask', bucket_name: str = 'bird-mlflow-bucket'):
+    def write_pretty_mask(self, file_name, key, alpha_blend, click_radius, s3_client = None, mask_path: str = 'pretty_mask', bucket_name: str = 'bird-mlflow-bucket'):
         """
         write_pretty_mask returns the nice mask like you'd want to see in a GUI.
         It will optionally upload it to s3 if an s3_client is provided
         """
         img = self.get_visualization(alpha_blend, click_radius)
-        logging.info(f"Writing pretty to {mask_path}/{key}")
-        cv2.imwrite(f"{mask_path}/{key}", img)
+        logging.info(f"Writing pretty to {file_name}")
+        cv2.imwrite(f"{file_name}", img)
         if s3_client is not None:
             logging.info(f"Uploading image to {bucket_name}/{mask_path}/{key}")
-            s3_client.upload_file(f"{mask_path}/{key}",bucket_name, f"{mask_path}/{key}")
+            s3_client.upload_file(f"{file_name}",bucket_name, f"{mask_path}/{key}")
 
-    def write_simple_mask(self, key, s3_client = None, mask_path: str = 'binary_mask', bucket_name: str = 'bird-mlflow-bucket'):
+    def write_simple_mask(self, file_name, key, s3_client = None, mask_path: str = 'binary_mask', bucket_name: str = 'bird-mlflow-bucket'):
         """
         write_simple_mask returns the a binary ish mask, that could be useful for downstream operations.
         It will optionally upload it to s3 if an s3_client is provided
         """
-        logging.info(f"Writing image to {mask_path}/{key}")
+        logging.info(f"Writing image to {file_name}")
         img = self.result_mask
         if img.max() < 256:
             mask = img.astype(np.uint8)
             mask *= 255 // mask.max()
-        cv2.imwrite(f"{mask_path}/{key}", img)
+        cv2.imwrite(f"{file_name}", img)
         if s3_client is not None:
             logging.info(f"Uploading image to {bucket_name}/{mask_path}/{key}")
-            s3_client.upload_file(f"{mask_path}/{key}",bucket_name, f"{mask_path}/{key}")
+            s3_client.upload_file(f"{file_name}",bucket_name, f"{mask_path}/{key}")
 
     @property
     def current_object_prob(self):
